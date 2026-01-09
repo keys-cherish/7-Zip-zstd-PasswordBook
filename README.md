@@ -31,8 +31,7 @@ The Password Book can be accessed from:
 #### Password File Format
 
 Passwords are stored in `data\password_book.dat` in the 7-Zip installation directory.
-- **Format**: `Password|||DisplayName` (UTF-8 encoded)
-- **Encryption**: XOR encrypted with magic header `7ZPB01`
+- **Encrypted**: Password data is encrypted for security
 - **Backup**: Auto-saved to `%APPDATA%\7-Zip-ZS-PB\` as secondary backup
 
 ### Based On
@@ -118,9 +117,8 @@ See [Releases](../../releases) for pre-built binaries:
 #### 密码文件格式
 
 密码保存在 7-Zip 安装目录下的 `data\password_book.dat` 文件中。
-- **格式**：`密码|||显示名称`（UTF-8 编码）
-- **加密**：使用 XOR 加密，文件头标识 `7ZPB01`
-- **备份**：自动同步备份到 `%APPDATA%\7-Zip-ZS-PB\`
+- **加密存储**：密码数据已加密保护
+- **自动备份**：同步备份到 `%APPDATA%\7-Zip-ZS-PB\`
 
 ### 基于以下项目
 

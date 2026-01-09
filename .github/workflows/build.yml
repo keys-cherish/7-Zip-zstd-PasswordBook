@@ -15,6 +15,7 @@ jobs:
     - name: Build
       run: |
         cd $GITHUB_WORKSPACE/CPP
+        chmod +x ./build-lx.sh
         ./build-lx.sh
     - name: Test
       run: |
@@ -33,6 +34,7 @@ jobs:
     - name: Build
       run: |
         cd $GITHUB_WORKSPACE/CPP
+        chmod +x ./build-lx.sh
         ./build-lx.sh
     - name: Test
       run: |

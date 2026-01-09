@@ -340,9 +340,18 @@ int CPasswordManager::Import(const FString &importPath)
 
     int importedCount = 0;
 
+    // Check if encrypted (has magic header) and decrypt
+    unsigned dataStart = 0;
+    if (fileSize > kMagicLen && memcmp(buf, kFileMagic, kMagicLen) == 0)
+    {
+        dataStart = kMagicLen;
+        XorCrypt(buf + dataStart, (unsigned)(fileSize - dataStart));
+    }
+
     // Parse line by line
     AString line;
-    for (unsigned i = 0; i < data.Len();)
+    unsigned dataLen = (unsigned)fileSize;
+    for (unsigned i = dataStart; i < dataLen;)
     {
         char c = data[i++];
         if (c == '\r')
