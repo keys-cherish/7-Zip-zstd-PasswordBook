@@ -40,7 +40,7 @@ END
 #endif
 
 #include "../../UI/FileManager/OverwriteDialog.rc"
-#include "../../UI/FileManager/PasswordDialog.rc"
+#include "PasswordDialog.rc"
 #include "../../UI/FileManager/ProgressDialog2.rc"
 #include "../../UI/GUI/Extract.rc"
 
