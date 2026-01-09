@@ -17,6 +17,17 @@
 #include "LangUtils.h"
 #endif
 
+// Helper function to get localized string with English fallback
+static UString GetLangStringWithDefault(UInt32 langID, const wchar_t *defaultStr)
+{
+#ifdef Z7_LANG
+    UString s = LangString(langID);
+    if (!s.IsEmpty())
+        return s;
+#endif
+    return defaultStr;
+}
+
 // ============================================================================
 // CPasswordEntryDialog - Add/Edit single password dialog
 // ============================================================================
@@ -34,22 +45,15 @@ bool CPasswordEntryDialog::OnInit()
     _passwordEdit.SetText(Password);
     _nameEdit.SetText(Name);
 
-    // Set window title based on mode - use LangString
-#ifdef Z7_LANG
+    // Set window title based on mode
     if (IsEdit)
-        SetText(LangString(IDS_PASSWORD_ENTRY_TITLE_EDIT));
+        SetText(GetLangStringWithDefault(IDS_PASSWORD_ENTRY_TITLE_EDIT, L"Edit Password"));
     else
-        SetText(LangString(IDS_PASSWORD_ENTRY_TITLE_ADD));
+        SetText(GetLangStringWithDefault(IDS_PASSWORD_ENTRY_TITLE_ADD, L"Add Password"));
 
     // Set labels
-    SetItemText(IDT_PASSWORD_ENTRY_PASSWORD, LangString(IDS_PASSWORD_LABEL));
-    SetItemText(IDT_PASSWORD_ENTRY_NAME, LangString(IDS_PASSWORD_DISPLAYNAME_LABEL));
-#else
-    if (IsEdit)
-        SetText(L"Edit Password");
-    else
-        SetText(L"Add Password");
-#endif
+    SetItemText(IDT_PASSWORD_ENTRY_PASSWORD, GetLangStringWithDefault(IDS_PASSWORD_LABEL, L"Password:"));
+    SetItemText(IDT_PASSWORD_ENTRY_NAME, GetLangStringWithDefault(IDS_PASSWORD_DISPLAYNAME_LABEL, L"Display Name (optional):"));
 
     NormalizePosition();
     return CModalDialog::OnInit();
@@ -73,11 +77,7 @@ void CPasswordEntryDialog::OnOK()
     // Password is required
     if (Password.IsEmpty())
     {
-#ifdef Z7_LANG
-        MessageBoxW(*this, LangString(IDS_PASSWORD_EMPTY_ERROR), L"Error", MB_OK | MB_ICONWARNING);
-#else
-        MessageBoxW(*this, L"Password cannot be empty!", L"Error", MB_OK | MB_ICONWARNING);
-#endif
+        MessageBoxW(*this, GetLangStringWithDefault(IDS_PASSWORD_EMPTY_ERROR, L"Password cannot be empty!"), L"Error", MB_OK | MB_ICONWARNING);
         return;
     }
 
@@ -106,20 +106,20 @@ bool CPasswordBookDialog::OnInit()
 {
 #ifdef Z7_LANG
     LangSetDlgItems(*this, NULL, 0);
+#endif
 
     // Set window title
-    SetText(LangString(IDS_PASSWORD_MANAGER));
+    SetText(GetLangStringWithDefault(IDS_PASSWORD_MANAGER, L"Password Manager"));
 
     // Set button texts
-    SetItemText(IDB_PASSWORD_BOOK_ADD, LangString(IDS_PASSWORD_ADD));
-    SetItemText(IDB_PASSWORD_BOOK_DELETE, LangString(IDS_PASSWORD_DELETE));
-    SetItemText(IDB_PASSWORD_BOOK_EDIT, LangString(IDS_PASSWORD_EDIT));
-    SetItemText(IDB_PASSWORD_BOOK_SELECT, LangString(IDS_PASSWORD_SELECT));
-    SetItemText(IDB_PASSWORD_BOOK_IMPORT, LangString(IDS_PASSWORD_IMPORT));
-    SetItemText(IDB_PASSWORD_BOOK_EXPORT, LangString(IDS_PASSWORD_EXPORT));
-    SetItemText(IDCANCEL, LangString(IDS_PASSWORD_CLOSE));
-    SetItemText(IDT_PASSWORD_BOOK_INFO, LangString(IDS_PASSWORD_INFO_DBLCLICK));
-#endif
+    SetItemText(IDB_PASSWORD_BOOK_ADD, GetLangStringWithDefault(IDS_PASSWORD_ADD, L"Add"));
+    SetItemText(IDB_PASSWORD_BOOK_DELETE, GetLangStringWithDefault(IDS_PASSWORD_DELETE, L"Delete"));
+    SetItemText(IDB_PASSWORD_BOOK_EDIT, GetLangStringWithDefault(IDS_PASSWORD_EDIT, L"Edit"));
+    SetItemText(IDB_PASSWORD_BOOK_SELECT, GetLangStringWithDefault(IDS_PASSWORD_SELECT, L"Select"));
+    SetItemText(IDB_PASSWORD_BOOK_IMPORT, GetLangStringWithDefault(IDS_PASSWORD_IMPORT, L"Import"));
+    SetItemText(IDB_PASSWORD_BOOK_EXPORT, GetLangStringWithDefault(IDS_PASSWORD_EXPORT, L"Export"));
+    SetItemText(IDCANCEL, GetLangStringWithDefault(IDS_PASSWORD_CLOSE, L"Close"));
+    SetItemText(IDT_PASSWORD_BOOK_INFO, GetLangStringWithDefault(IDS_PASSWORD_INFO_DBLCLICK, L"Double-click to copy password to clipboard"));
 
     _list.Attach(GetItem(IDL_PASSWORD_BOOK_LIST));
 
@@ -127,13 +127,8 @@ bool CPasswordBookDialog::OnInit()
     _list.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
 
     // Add columns: DisplayName first, then Password (masked)
-#ifdef Z7_LANG
-    _list.InsertColumn(0, LangString(IDS_PASSWORD_COL_DISPLAYNAME), 150);
-    _list.InsertColumn(1, LangString(IDS_PASSWORD_COL_PASSWORD), 200);
-#else
-    _list.InsertColumn(0, L"Display Name", 150);
-    _list.InsertColumn(1, L"Password", 200);
-#endif
+    _list.InsertColumn(0, GetLangStringWithDefault(IDS_PASSWORD_COL_DISPLAYNAME, L"Display Name"), 150);
+    _list.InsertColumn(1, GetLangStringWithDefault(IDS_PASSWORD_COL_PASSWORD, L"Password"), 200);
 
     // Load passwords from file
     g_PasswordManager.Load();
@@ -271,21 +266,12 @@ void CPasswordBookDialog::OnDelete()
     int index = GetSelectedIndex();
     if (index < 0)
     {
-#ifdef Z7_LANG
-        MessageBoxW(*this, LangString(IDS_PASSWORD_SELECT_DELETE), L"Info", MB_OK | MB_ICONINFORMATION);
-#else
-        MessageBoxW(*this, L"Please select a password to delete.", L"Info", MB_OK | MB_ICONINFORMATION);
-#endif
+        MessageBoxW(*this, GetLangStringWithDefault(IDS_PASSWORD_SELECT_DELETE, L"Please select a password to delete."), L"Info", MB_OK | MB_ICONINFORMATION);
         return;
     }
 
-#ifdef Z7_LANG
-    if (MessageBoxW(*this, LangString(IDS_PASSWORD_CONFIRM_DELETE),
-                    LangString(IDS_PASSWORD_DELETE), MB_YESNO | MB_ICONQUESTION) == IDYES)
-#else
-    if (MessageBoxW(*this, L"Are you sure you want to delete this password?",
-                    L"Confirm Delete", MB_YESNO | MB_ICONQUESTION) == IDYES)
-#endif
+    if (MessageBoxW(*this, GetLangStringWithDefault(IDS_PASSWORD_CONFIRM_DELETE, L"Are you sure you want to delete this password?"),
+                    GetLangStringWithDefault(IDS_PASSWORD_DELETE, L"Delete"), MB_YESNO | MB_ICONQUESTION) == IDYES)
     {
         g_PasswordManager.Remove(index);
         g_PasswordManager.Save();
@@ -298,11 +284,7 @@ void CPasswordBookDialog::OnEdit()
     int index = GetSelectedIndex();
     if (index < 0)
     {
-#ifdef Z7_LANG
-        MessageBoxW(*this, LangString(IDS_PASSWORD_SELECT_EDIT), L"Info", MB_OK | MB_ICONINFORMATION);
-#else
-        MessageBoxW(*this, L"Please select a password to edit.", L"Info", MB_OK | MB_ICONINFORMATION);
-#endif
+        MessageBoxW(*this, GetLangStringWithDefault(IDS_PASSWORD_SELECT_EDIT, L"Please select a password to edit."), L"Info", MB_OK | MB_ICONINFORMATION);
         return;
     }
 
@@ -366,11 +348,7 @@ void CPasswordBookDialog::OnSelect()
     int index = GetSelectedIndex();
     if (index < 0)
     {
-#ifdef Z7_LANG
-        MessageBoxW(*this, LangString(IDS_PASSWORD_SELECT_ITEM), L"Info", MB_OK | MB_ICONINFORMATION);
-#else
-        MessageBoxW(*this, L"Please select a password.", L"Info", MB_OK | MB_ICONINFORMATION);
-#endif
+        MessageBoxW(*this, GetLangStringWithDefault(IDS_PASSWORD_SELECT_ITEM, L"Please select a password."), L"Info", MB_OK | MB_ICONINFORMATION);
         return;
     }
 
@@ -449,21 +427,12 @@ void CPasswordBookDialog::OnImport()
             g_PasswordManager.Save();
             RefreshList();
 
-            UString msg;
-#ifdef Z7_LANG
-            msg = LangString(IDS_PASSWORD_IMPORT_SUCCESS);
+            UString msg = GetLangStringWithDefault(IDS_PASSWORD_IMPORT_SUCCESS, L"Successfully imported passwords.");
             wchar_t numBuf[32];
             _itow_s(count, numBuf, 10);
             msg += L" (";
             msg += numBuf;
             msg += L")";
-#else
-            wchar_t numBuf[32];
-            _itow_s(count, numBuf, 10);
-            msg = L"Successfully imported ";
-            msg += numBuf;
-            msg += L" passwords.";
-#endif
             MessageBoxW(*this, msg, L"Import", MB_OK | MB_ICONINFORMATION);
         }
         else if (count == 0)
@@ -472,11 +441,7 @@ void CPasswordBookDialog::OnImport()
         }
         else
         {
-#ifdef Z7_LANG
-            MessageBoxW(*this, LangString(IDS_PASSWORD_IMPORT_FAILED), L"Import", MB_OK | MB_ICONWARNING);
-#else
-            MessageBoxW(*this, L"Failed to import passwords. Check file format.", L"Import", MB_OK | MB_ICONWARNING);
-#endif
+            MessageBoxW(*this, GetLangStringWithDefault(IDS_PASSWORD_IMPORT_FAILED, L"Failed to import passwords. Check file format."), L"Import", MB_OK | MB_ICONWARNING);
         }
     }
 }
@@ -513,30 +478,17 @@ void CPasswordBookDialog::OnExport()
 
         if (success)
         {
-            UString msg;
-#ifdef Z7_LANG
-            msg = LangString(IDS_PASSWORD_EXPORT_SUCCESS);
+            UString msg = GetLangStringWithDefault(IDS_PASSWORD_EXPORT_SUCCESS, L"Successfully exported passwords.");
             wchar_t numBuf[32];
             _itow_s((int)entries.Size(), numBuf, 10);
             msg += L" (";
             msg += numBuf;
             msg += L")";
-#else
-            wchar_t numBuf[32];
-            _itow_s((int)entries.Size(), numBuf, 10);
-            msg = L"Successfully exported ";
-            msg += numBuf;
-            msg += L" passwords.";
-#endif
             MessageBoxW(*this, msg, L"Export", MB_OK | MB_ICONINFORMATION);
         }
         else
         {
-#ifdef Z7_LANG
-            MessageBoxW(*this, LangString(IDS_PASSWORD_EXPORT_FAILED), L"Export", MB_OK | MB_ICONERROR);
-#else
-            MessageBoxW(*this, L"Failed to export passwords.", L"Export", MB_OK | MB_ICONERROR);
-#endif
+            MessageBoxW(*this, GetLangStringWithDefault(IDS_PASSWORD_EXPORT_FAILED, L"Failed to export passwords."), L"Export", MB_OK | MB_ICONERROR);
         }
     }
 }
