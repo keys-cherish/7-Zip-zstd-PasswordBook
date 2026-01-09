@@ -1,0 +1,52 @@
+
+*.obj
+*.exe
+*.res
+*.dll
+*.pch
+*.exp
+*.lib
+*.sfx
+
+# Folders
+*.vscode
+**/x86-bin
+**/x64-bin
+**/arm64-bin
+
+# Backup files (Password Book development)
+backup_*/
+*.bak
+*.backup
+
+# Build output folder (entire folder)
+build_output/
+
+# Visual Studio
+*.pdb
+*.ilk
+*.iobj
+*.ipdb
+*.log
+*.tlog/
+*.lastbuildstate
+*.idb
+*.suo
+*.user
+*.sdf
+*.opensdf
+*.ncb
+*.VC.db
+*.VC.opendb
+.vs/
+Debug/
+Release/
+
+# Temporary files
+*.tmp
+*~
+Thumbs.db
+.DS_Store
+
+# Portable batch (not needed for source)
+make_portable.bat
