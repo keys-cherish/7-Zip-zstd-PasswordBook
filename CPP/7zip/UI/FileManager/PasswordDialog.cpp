@@ -42,6 +42,23 @@ bool CPasswordDialog::OnInit()
   _passwordEdit.Attach(GetItem(IDE_PASSWORD_PASSWORD));
   CheckButton(IDX_PASSWORD_SHOW, ShowPassword);
   SetTextSpec();
+
+#ifndef Z7_SFX
+  // Set Marlett font for dropdown button to display arrow
+  HWND hDropdown = GetItem(IDB_PASSWORD_DROPDOWN);
+  if (hDropdown)
+  {
+    HFONT hFont = CreateFontW(14, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+                              DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                              DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Marlett");
+    if (hFont)
+    {
+      SendMessageW(hDropdown, WM_SETFONT, (WPARAM)hFont, TRUE);
+      SetWindowTextW(hDropdown, L"u"); // Marlett 'u' = down arrow
+    }
+  }
+#endif
+
   return CModalDialog::OnInit();
 }
 
@@ -113,7 +130,12 @@ void CPasswordDialog::OnPasswordDropdown()
 
   // Add separator and "Manage..." option
   AppendMenuW(hMenu, MF_SEPARATOR, 0, NULL);
-  AppendMenuW(hMenu, MF_STRING, 999, L"Password Book...");
+  UString menuText = LangString(IDS_PASSWORD_BOOK);
+  if (menuText.IsEmpty())
+    menuText = L"Password Book...";
+  else
+    menuText += L"...";
+  AppendMenuW(hMenu, MF_STRING, 999, menuText);
 
   // Get button position
   HWND hButton = GetItem(IDB_PASSWORD_DROPDOWN);

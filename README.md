@@ -30,8 +30,10 @@ The Password Book can be accessed from:
 
 #### Password File Format
 
-Passwords are stored in `password_book.dat` in the 7-Zip installation directory.
-Format: `Password|||DisplayName` (UTF-8 encoded)
+Passwords are stored in `data\password_book.dat` in the 7-Zip installation directory.
+- **Format**: `Password|||DisplayName` (UTF-8 encoded)
+- **Encryption**: XOR encrypted with magic header `7ZPB01`
+- **Backup**: Auto-saved to `%APPDATA%\7-Zip-ZS-PB\` as secondary backup
 
 ### Based On
 
@@ -53,16 +55,28 @@ Same as the upstream projects:
 
 **Build Steps:**
 ```batch
-# Open Developer Command Prompt for VS 2022, then run:
-cmd /c "path\to\7-Zip-zstd\build.cmd"
+# Clone the repository
+git clone https://github.com/keys-cherish/7-Zip-zstd-PasswordBook.git
+cd 7-Zip-zstd-PasswordBook
 
-# Or build specific architecture:
-build.cmd x64    # 64-bit
-build.cmd x86    # 32-bit
-build.cmd arm64  # ARM64
+# Build (auto-cleans FM/GUI cache each time)
+build.cmd
+
+# Options:
+build.cmd clean    # Clean all build cache only
+build.cmd rebuild  # Clean all and rebuild (including 7z.dll)
 ```
 
-The output files will be in `build_output\` directory.
+**Output Structure:**
+```
+build_output/
+├── 7z.dll          # Core codec library
+├── 7zFM.exe        # File Manager
+├── 7zG.exe         # GUI module
+├── data/           # Password database folder
+├── Lang/           # Language files (zh-cn.txt)
+└── scripts/        # Install/uninstall scripts
+```
 
 ### Downloads
 
@@ -103,8 +117,10 @@ See [Releases](../../releases) for pre-built binaries:
 
 #### 密码文件格式
 
-密码保存在 7-Zip 安装目录下的 `password_book.dat` 文件中。
-格式：`密码|||显示名称`（UTF-8 编码）
+密码保存在 7-Zip 安装目录下的 `data\password_book.dat` 文件中。
+- **格式**：`密码|||显示名称`（UTF-8 编码）
+- **加密**：使用 XOR 加密，文件头标识 `7ZPB01`
+- **备份**：自动同步备份到 `%APPDATA%\7-Zip-ZS-PB\`
 
 ### 基于以下项目
 
@@ -126,16 +142,28 @@ See [Releases](../../releases) for pre-built binaries:
 
 **编译步骤：**
 ```batch
-# 打开 VS 2022 开发者命令提示符，然后运行：
-cmd /c "项目路径\build.cmd"
+# 克隆仓库
+git clone https://github.com/keys-cherish/7-Zip-zstd-PasswordBook.git
+cd 7-Zip-zstd-PasswordBook
 
-# 或指定架构编译：
-build.cmd x64    # 64位
-build.cmd x86    # 32位
-build.cmd arm64  # ARM64
+# 编译（每次自动清理 FM/GUI 缓存）
+build.cmd
+
+# 选项：
+build.cmd clean    # 仅清理所有编译缓存
+build.cmd rebuild  # 清理所有并重新编译（包括 7z.dll）
 ```
 
-编译输出文件位于 `build_output\` 目录。
+**输出目录结构：**
+```
+build_output/
+├── 7z.dll          # 核心编码库
+├── 7zFM.exe        # 文件管理器
+├── 7zG.exe         # GUI 模块
+├── data/           # 密码数据库文件夹
+├── Lang/           # 语言文件 (zh-cn.txt)
+└── scripts/        # 安装/卸载脚本
+```
 
 ### 下载
 

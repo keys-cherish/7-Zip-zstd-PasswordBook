@@ -21,17 +21,20 @@ class CPasswordManager
 {
 private:
     CObjectVector<CPasswordEntry> _entries;
-    FString _filePath;
+    FString _filePath;   // Primary: <exe>\data\password_book.dat
+    FString _backupPath; // Backup: %APPDATA%\7-Zip-ZS-PB\password_book.dat
 
     void GetPasswordFilePath();
+    bool LoadFromPath(const FString &path);
+    bool SaveToPath(const FString &path);
 
 public:
     CPasswordManager();
 
-    // Load passwords from 7z_passwords.txt
+    // Load passwords from file (tries primary, then backup)
     bool Load();
 
-    // Save passwords to 7z_passwords.txt
+    // Save passwords to both locations (encrypted)
     bool Save();
 
     // Get all entries

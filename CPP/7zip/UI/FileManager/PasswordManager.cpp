@@ -4,9 +4,12 @@
 
 #include "../../../Common/UTFConvert.h"
 #include "../../../Windows/DLL.h"
+#include "../../../Windows/FileDir.h"
 #include "../../../Windows/FileIO.h"
 
 #include "PasswordManager.h"
+
+#include <ShlObj.h>
 
 using namespace NWindows;
 
@@ -14,6 +17,23 @@ using namespace NWindows;
 CPasswordManager g_PasswordManager;
 
 static const char *const kPasswordFileName = "password_book.dat";
+static const WCHAR *const kDataFolder = L"data";
+static const WCHAR *const kBackupAppFolder = L"7-Zip-ZS-PB";
+
+// Simple XOR encryption key
+static const unsigned char kXorKey[] = {0x7A, 0x5F, 0x70, 0x62, 0x6B, 0x21, 0x32, 0x30};
+static const unsigned kXorKeyLen = sizeof(kXorKey);
+
+// File magic header for encrypted files
+static const char kFileMagic[] = "7ZPB01";
+static const unsigned kMagicLen = 6;
+
+// XOR encrypt/decrypt (same operation)
+static void XorCrypt(char *data, unsigned len)
+{
+    for (unsigned i = 0; i < len; i++)
+        data[i] ^= kXorKey[i % kXorKeyLen];
+}
 
 CPasswordManager::CPasswordManager()
 {
@@ -22,8 +42,25 @@ CPasswordManager::CPasswordManager()
 
 void CPasswordManager::GetPasswordFilePath()
 {
-    _filePath = NDLL::GetModuleDirPrefix();
+    // Primary: <exe>\data\password_book.dat
+    FString moduleDir = NDLL::GetModuleDirPrefix();
+    _filePath = moduleDir;
+    _filePath += kDataFolder;
+    NFile::NDir::CreateComplexDir(_filePath);
+    _filePath += FCHAR_PATH_SEPARATOR;
     _filePath += kPasswordFileName;
+
+    // Backup: %APPDATA%\7-Zip-ZS-PB\password_book.dat
+    WCHAR appDataPath[MAX_PATH];
+    if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_APPDATA, NULL, 0, appDataPath)))
+    {
+        _backupPath = appDataPath;
+        _backupPath += FCHAR_PATH_SEPARATOR;
+        _backupPath += kBackupAppFolder;
+        NFile::NDir::CreateComplexDir(_backupPath);
+        _backupPath += FCHAR_PATH_SEPARATOR;
+        _backupPath += kPasswordFileName;
+    }
 }
 
 // Parse a line in format: Password|||DisplayName
@@ -45,12 +82,10 @@ static bool ParsePasswordLine(const UString &line, CPasswordEntry &entry)
     return !entry.Password.IsEmpty();
 }
 
-bool CPasswordManager::Load()
+bool CPasswordManager::LoadFromPath(const FString &path)
 {
-    _entries.Clear();
-
     NFile::NIO::CInFile file;
-    if (!file.Open(_filePath))
+    if (!file.Open(path))
         return false;
 
     UInt64 fileSize;
@@ -73,9 +108,19 @@ bool CPasswordManager::Load()
     if (processedSize != fileSize)
         return false;
 
+    // Check magic header and decrypt
+    unsigned dataStart = 0;
+    bool isEncrypted = (fileSize > kMagicLen && memcmp(buf, kFileMagic, kMagicLen) == 0);
+    if (isEncrypted)
+    {
+        dataStart = kMagicLen;
+        XorCrypt(buf + dataStart, (unsigned)(fileSize - dataStart));
+    }
+
     // Parse line by line
     AString line;
-    for (unsigned i = 0; i < data.Len();)
+    unsigned dataLen = (unsigned)fileSize;
+    for (unsigned i = dataStart; i < dataLen;)
     {
         char c = data[i++];
         if (c == '\r')
@@ -115,39 +160,67 @@ bool CPasswordManager::Load()
     return true;
 }
 
-bool CPasswordManager::Save()
+bool CPasswordManager::Load()
+{
+    _entries.Clear();
+
+    // Try primary path first
+    if (LoadFromPath(_filePath))
+        return true;
+
+    // Try backup path
+    if (!_backupPath.IsEmpty() && LoadFromPath(_backupPath))
+    {
+        Save(); // Restore to primary
+        return true;
+    }
+
+    return false;
+}
+
+bool CPasswordManager::SaveToPath(const FString &path)
 {
     NFile::NIO::COutFile file;
-    if (!file.Create_ALWAYS(_filePath))
+    if (!file.Create_ALWAYS(path))
         return false;
 
-    // Write header comment
-    const char *header = "# Password Book\n# Format: Password|||DisplayName\n";
-    UInt32 headerLen = (UInt32)strlen(header);
-    UInt32 processedSize;
-    if (!file.Write(header, headerLen, processedSize))
-        return false;
+    // Build content
+    AString content;
+    content += "# Password Book\n# Format: Password|||DisplayName\n";
 
     for (unsigned i = 0; i < _entries.Size(); i++)
     {
         const CPasswordEntry &entry = _entries[i];
-
-        // Format: Password|||DisplayName
         UString line = entry.Password;
         line += L"|||";
         line += entry.Name;
 
         AString utf8;
         ConvertUnicodeToUTF8(line, utf8);
-        utf8 += "\r\n";
-
-        if (!file.Write((const char *)utf8, utf8.Len(), processedSize))
-            return false;
-        if (processedSize != utf8.Len())
-            return false;
+        content += utf8;
+        content += "\r\n";
     }
 
-    return true;
+    // Write magic header
+    UInt32 processedSize;
+    if (!file.Write(kFileMagic, kMagicLen, processedSize))
+        return false;
+
+    // Encrypt and write content
+    char *contentBuf = content.GetBuf_SetEnd(content.Len());
+    XorCrypt(contentBuf, content.Len());
+
+    if (!file.Write(contentBuf, content.Len(), processedSize))
+        return false;
+
+    return processedSize == content.Len();
+}
+
+bool CPasswordManager::Save()
+{
+    bool ok1 = SaveToPath(_filePath);
+    bool ok2 = !_backupPath.IsEmpty() ? SaveToPath(_backupPath) : false;
+    return ok1 || ok2;
 }
 
 bool CPasswordManager::Add(const UString &name, const UString &password)

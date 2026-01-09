@@ -14,8 +14,43 @@ set PLATFORM=x64
 set OUTDIR=%~dp0build_output
 set OPTS=
 
+REM Check for clean/rebuild option
+if "%1"=="clean" goto :cleanonly
+if "%1"=="rebuild" goto :clean
+
+REM Always clean FM and GUI cache to ensure fresh build
+echo.
+echo Cleaning FM/GUI cache for fresh build...
+if exist "%ROOT%\UI\FileManager\%PLATFORM%" rd /s /q "%ROOT%\UI\FileManager\%PLATFORM%"
+if exist "%ROOT%\UI\GUI\%PLATFORM%" rd /s /q "%ROOT%\UI\GUI\%PLATFORM%"
+goto :build
+
+:cleanonly
+echo.
+echo Cleaning all build cache...
+if exist "%ROOT%\Bundles\Format7zF\%PLATFORM%" rd /s /q "%ROOT%\Bundles\Format7zF\%PLATFORM%"
+if exist "%ROOT%\UI\FileManager\%PLATFORM%" rd /s /q "%ROOT%\UI\FileManager\%PLATFORM%"
+if exist "%ROOT%\UI\GUI\%PLATFORM%" rd /s /q "%ROOT%\UI\GUI\%PLATFORM%"
+echo   [OK] Build cache cleaned.
+goto :end
+
+:clean
+echo.
+echo Cleaning all build cache...
+if exist "%ROOT%\Bundles\Format7zF\%PLATFORM%" rd /s /q "%ROOT%\Bundles\Format7zF\%PLATFORM%"
+if exist "%ROOT%\UI\FileManager\%PLATFORM%" rd /s /q "%ROOT%\UI\FileManager\%PLATFORM%"
+if exist "%ROOT%\UI\GUI\%PLATFORM%" rd /s /q "%ROOT%\UI\GUI\%PLATFORM%"
+echo   [OK] Build cache cleaned.
+
+:build
 REM Create output directory
 if not exist "%OUTDIR%" mkdir "%OUTDIR%"
+
+REM Create data subfolder for password database
+if not exist "%OUTDIR%\data" mkdir "%OUTDIR%\data"
+
+REM Create scripts subfolder for install/uninstall scripts  
+if not exist "%OUTDIR%\scripts" mkdir "%OUTDIR%\scripts"
 
 echo.
 echo Building 7z.dll (Core Library)...
@@ -55,22 +90,31 @@ echo ============================================
 echo Build completed successfully!
 echo Output directory: %OUTDIR%
 echo ============================================
+echo.
+echo Usage: build.cmd [clean^|rebuild]
+echo   clean   - Clean build cache only
+echo   rebuild - Clean cache and rebuild all
 
-REM Create Lang folder if it doesn't exist
+REM Copy Lang folder if source exists and target doesn't have zh-cn.txt
 if not exist "%OUTDIR%\Lang" mkdir "%OUTDIR%\Lang"
+if exist "%~dp0release\Chinese\Lang\zh-cn.txt" (
+    if not exist "%OUTDIR%\Lang\zh-cn.txt" (
+        echo.
+        echo Copying Chinese language file...
+        copy "%~dp0release\Chinese\Lang\zh-cn.txt" "%OUTDIR%\Lang\" >nul
+        echo   [OK] zh-cn.txt copied
+    )
+)
 
-REM Create password file if it doesn't exist
-if not exist "%OUTDIR%\7z_passwords.txt" (
-    echo # 7-Zip ZS Password Book> "%OUTDIR%\7z_passwords.txt"
-    echo # One password per line, lines starting with # are comments>> "%OUTDIR%\7z_passwords.txt"
+REM Copy install scripts to scripts folder if not exist
+if exist "%~dp0build_output\install-7zZS-PB.bat" (
+    if not exist "%OUTDIR%\scripts\install-7zZS-PB.bat" (
+        move "%OUTDIR%\install-7zZS-PB.bat" "%OUTDIR%\scripts\" >nul 2>&1
+        move "%OUTDIR%\uninstall-7zZS-PB.bat" "%OUTDIR%\scripts\" >nul 2>&1
+    )
 )
 
 echo.
-echo NOTE: For Chinese/localization support, copy the Lang folder from
-echo       an official 7-Zip installation to: %OUTDIR%\Lang
-echo       Download from: https://www.7-zip.org/
-echo.
-
 dir "%OUTDIR%"
 goto :end
 
