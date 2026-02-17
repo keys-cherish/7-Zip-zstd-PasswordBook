@@ -57,6 +57,7 @@ namespace NCompressDialog
     bool OpenShareForWrite;
     bool DeleteAfterCompressing;
     bool CompressSeparately;
+    UString SerialStart; // e.g. "001", "A", "I" -- empty means no serial numbering
     
     CBoolPair SymLinks;
     CBoolPair HardLinks;

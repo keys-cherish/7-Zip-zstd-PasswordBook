@@ -63,6 +63,7 @@ static const UInt32 kLangIDs[] =
         IDX_COMPRESS_SHARED,
         IDX_COMPRESS_DEL,
         IDX_COMPRESS_SEPARATE,
+        IDT_COMPRESS_SERIAL_START,
 
         IDT_COMPRESS_MEMORY,
         IDT_COMPRESS_MEMORY_DE,
@@ -551,6 +552,10 @@ bool CCompressDialog::OnInit()
   CheckButton(IDX_COMPRESS_DEL, Info.DeleteAfterCompressing);
   CheckButton(IDX_COMPRESS_SEPARATE, Info.CompressSeparately);
 
+  SetItemText(IDE_COMPRESS_SERIAL_START, Info.SerialStart);
+  EnableItem(IDT_COMPRESS_SERIAL_START, Info.CompressSeparately);
+  EnableItem(IDE_COMPRESS_SERIAL_START, Info.CompressSeparately);
+
   FormatChanged(false); // isChanged
 
   // OnButtonSFX();
@@ -611,6 +616,13 @@ bool CCompressDialog::OnButtonClicked(unsigned buttonID, HWND buttonHWND)
   case IDX_PASSWORD_SHOW:
   {
     UpdatePasswordControl();
+    return true;
+  }
+  case IDX_COMPRESS_SEPARATE:
+  {
+    const bool checked = IsButtonCheckedBool(IDX_COMPRESS_SEPARATE);
+    EnableItem(IDT_COMPRESS_SERIAL_START, checked);
+    EnableItem(IDE_COMPRESS_SERIAL_START, checked);
     return true;
   }
   case IDB_COMPRESS_OPTIONS:
@@ -1177,6 +1189,12 @@ void CCompressDialog::OnOK()
   Info.OpenShareForWrite = IsButtonCheckedBool(IDX_COMPRESS_SHARED);
   Info.DeleteAfterCompressing = IsButtonCheckedBool(IDX_COMPRESS_DEL);
   Info.CompressSeparately = IsButtonCheckedBool(IDX_COMPRESS_SEPARATE);
+
+  {
+    UString s;
+    GetItemText(IDE_COMPRESS_SERIAL_START, s);
+    Info.SerialStart = s;
+  }
 
   m_RegistryInfo.EncryptHeaders =
       Info.EncryptHeaders = IsButtonCheckedBool(IDX_COMPRESS_ENCRYPT_FILE_NAMES);

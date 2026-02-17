@@ -317,6 +317,7 @@ static HRESULT ShowDialog(
     const CObjectVector<NWildcard::CCensorPath> &censor,
     CUpdateOptions &options,
     bool &compressSeparately,
+    UString &serialStart,
     CUpdateCallbackGUI *callback, HWND hwndParent)
 {
   if (options.Commands.Size() != 1)
@@ -460,6 +461,7 @@ static HRESULT ShowDialog(
 
   options.DeleteAfterCompressing = di.DeleteAfterCompressing;
   compressSeparately = di.CompressSeparately;
+  serialStart = di.SerialStart;
 
   options.SymLinks = di.SymLinks;
   options.HardLinks = di.HardLinks;
@@ -542,6 +544,190 @@ static HRESULT ShowDialog(
   return S_OK;
 }
 
+
+// --- Serial number generation for "Compress each item separately" ---
+
+enum ESerialType
+{
+  kSerial_None,
+  kSerial_Numeric,    // 001, 02, 1, etc.
+  kSerial_AlphaUpper, // A, B, C...Z, AA, AB...
+  kSerial_AlphaLower, // a, b, c...z, aa, ab...
+  kSerial_Roman       // I, II, III, IV...
+};
+
+static bool IsAllDigits(const UString &s)
+{
+  for (unsigned i = 0; i < s.Len(); i++)
+    if (s[i] < L'0' || s[i] > L'9')
+      return false;
+  return s.Len() > 0;
+}
+
+static bool IsAllUpperAlpha(const UString &s)
+{
+  for (unsigned i = 0; i < s.Len(); i++)
+    if (s[i] < L'A' || s[i] > L'Z')
+      return false;
+  return s.Len() > 0;
+}
+
+static bool IsAllLowerAlpha(const UString &s)
+{
+  for (unsigned i = 0; i < s.Len(); i++)
+    if (s[i] < L'a' || s[i] > L'z')
+      return false;
+  return s.Len() > 0;
+}
+
+static const wchar_t * const kRomanOnes[]    = { L"", L"I", L"II", L"III", L"IV", L"V", L"VI", L"VII", L"VIII", L"IX" };
+static const wchar_t * const kRomanTens[]    = { L"", L"X", L"XX", L"XXX", L"XL", L"L", L"LX", L"LXX", L"LXXX", L"XC" };
+static const wchar_t * const kRomanHundreds[]= { L"", L"C", L"CC", L"CCC", L"CD", L"D", L"DC", L"DCC", L"DCCC", L"CM" };
+static const wchar_t * const kRomanThousands[]={ L"", L"M", L"MM", L"MMM" };
+
+static UString IntToRoman(unsigned val)
+{
+  if (val == 0 || val > 3999)
+  {
+    UString s;
+    s.Add_UInt32(val);
+    return s;
+  }
+  UString r;
+  r += kRomanThousands[val / 1000]; val %= 1000;
+  r += kRomanHundreds[val / 100];   val %= 100;
+  r += kRomanTens[val / 10];        val %= 10;
+  r += kRomanOnes[val];
+  return r;
+}
+
+static int RomanToInt(const UString &s)
+{
+  int total = 0;
+  int prev = 0;
+  for (int i = (int)s.Len() - 1; i >= 0; i--)
+  {
+    int v = 0;
+    switch (s[i])
+    {
+      case L'I': case L'i': v = 1; break;
+      case L'V': case L'v': v = 5; break;
+      case L'X': case L'x': v = 10; break;
+      case L'L': case L'l': v = 50; break;
+      case L'C': case L'c': v = 100; break;
+      case L'D': case L'd': v = 500; break;
+      case L'M': case L'm': v = 1000; break;
+      default: return -1;
+    }
+    if (v < prev)
+      total -= v;
+    else
+      total += v;
+    prev = v;
+  }
+  return total;
+}
+
+static bool IsRoman(const UString &s)
+{
+  if (s.IsEmpty()) return false;
+  int v = RomanToInt(s);
+  if (v <= 0 || v > 3999) return false;
+  // Verify round-trip
+  UString check = IntToRoman((unsigned)v);
+  // case-insensitive compare
+  if (check.Len() != s.Len()) return false;
+  for (unsigned i = 0; i < check.Len(); i++)
+  {
+    wchar_t a = check[i];
+    wchar_t b = s[i];
+    if (b >= L'a' && b <= L'z') b -= 32;
+    if (a != b) return false;
+  }
+  return true;
+}
+
+static ESerialType DetectSerialType(const UString &start)
+{
+  if (start.IsEmpty()) return kSerial_None;
+  if (IsAllDigits(start)) return kSerial_Numeric;
+  if (IsRoman(start)) return kSerial_Roman;
+  if (IsAllUpperAlpha(start)) return kSerial_AlphaUpper;
+  if (IsAllLowerAlpha(start)) return kSerial_AlphaLower;
+  return kSerial_None;
+}
+
+static unsigned AlphaToInt(const UString &s)
+{
+  unsigned val = 0;
+  for (unsigned i = 0; i < s.Len(); i++)
+  {
+    wchar_t c = s[i];
+    unsigned digit;
+    if (c >= L'A' && c <= L'Z') digit = c - L'A';
+    else if (c >= L'a' && c <= L'z') digit = c - L'a';
+    else digit = 0;
+    val = val * 26 + digit;
+  }
+  return val;
+}
+
+static UString IntToAlpha(unsigned val, unsigned minLen, bool upper)
+{
+  UString r;
+  do
+  {
+    wchar_t c = (wchar_t)((val % 26) + (upper ? L'A' : L'a'));
+    r.InsertAtFront(c);
+    val /= 26;
+  }
+  while (val > 0);
+  while (r.Len() < minLen)
+    r.InsertAtFront(upper ? L'A' : L'a');
+  return r;
+}
+
+static UString GenerateSerial(const UString &start, ESerialType type, unsigned offset)
+{
+  switch (type)
+  {
+    case kSerial_Numeric:
+    {
+      // Parse start as integer, add offset, pad to same width
+      UInt64 startVal = 0;
+      for (unsigned i = 0; i < start.Len(); i++)
+        startVal = startVal * 10 + (start[i] - L'0');
+      UInt64 val = startVal + offset;
+      wchar_t buf[32];
+      int pos = 31;
+      buf[pos] = 0;
+      do
+      {
+        buf[--pos] = (wchar_t)(L'0' + (val % 10));
+        val /= 10;
+      }
+      while (val > 0);
+      // Pad to at least start.Len()
+      while ((unsigned)(31 - pos) < start.Len())
+        buf[--pos] = L'0';
+      return UString(buf + pos);
+    }
+    case kSerial_AlphaUpper:
+      return IntToAlpha(AlphaToInt(start) + offset, start.Len(), true);
+    case kSerial_AlphaLower:
+      return IntToAlpha(AlphaToInt(start) + offset, start.Len(), false);
+    case kSerial_Roman:
+    {
+      int startVal = RomanToInt(start);
+      if (startVal <= 0) startVal = 1;
+      return IntToRoman((unsigned)(startVal + (int)offset));
+    }
+    default:
+      return UString();
+  }
+}
+
+
 HRESULT UpdateGUI(
     CCodecs *codecs,
     const CObjectVector<COpenType> &formatIndices,
@@ -556,9 +742,10 @@ HRESULT UpdateGUI(
   messageWasDisplayed = false;
   bool needSetPath  = true;
   bool compressSeparately = false;
+  UString serialStart;
   if (showDialog)
   {
-    RINOK(ShowDialog(codecs, censor.CensorPaths, options, compressSeparately, callback, hwndParent))
+    RINOK(ShowDialog(codecs, censor.CensorPaths, options, compressSeparately, serialStart, callback, hwndParent))
     needSetPath = false;
   }
   if (options.SfxMode && options.SfxModule.IsEmpty())
@@ -572,6 +759,7 @@ HRESULT UpdateGUI(
   if (compressSeparately && censor.CensorPaths.Size() > 1)
   {
     const CArchivePath savedArchivePath = options.ArchivePath;
+    const ESerialType serialType = DetectSerialType(serialStart);
 
     for (unsigned idx = 0; idx < censor.CensorPaths.Size(); idx++)
     {
@@ -590,6 +778,16 @@ HRESULT UpdateGUI(
       if (itemName.Len() > 0 && IS_PATH_SEPAR(itemName.Back()))
         itemName.DeleteBack();
 
+      // Prepend serial number if configured
+      UString arcName = itemName;
+      if (serialType != kSerial_None)
+      {
+        UString serial = GenerateSerial(serialStart, serialType, idx);
+        arcName = serial;
+        arcName += L"_";
+        arcName += itemName;
+      }
+
       // Set archive path: same directory as original, but with item name
       UString arcDir;
       {
@@ -599,7 +797,7 @@ HRESULT UpdateGUI(
           arcDir = origArc.Left((unsigned)(dirSlash + 1));
       }
       options.ArchivePath = savedArchivePath;
-      options.ArchivePath.ParseFromPath(arcDir + itemName, k_ArcNameMode_Smart);
+      options.ArchivePath.ParseFromPath(arcDir + arcName, k_ArcNameMode_Smart);
 
       CThreadUpdating tu;
       tu.needSetPath = needSetPath;

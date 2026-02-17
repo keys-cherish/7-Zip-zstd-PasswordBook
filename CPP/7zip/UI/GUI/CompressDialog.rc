@@ -44,7 +44,7 @@
 #define GROUP_Y_SIZE 8
 #define GROUP_Y_SIZE_ENCRYPT 8
 #else
-#define GROUP_Y_SIZE 80
+#define GROUP_Y_SIZE 96
 #define GROUP_Y_SIZE_ENCRYPT 128
 #endif
 
@@ -126,6 +126,8 @@ BEGIN
             g4x2, yOpt + 46, g4xs2, 10
   CONTROL   "Compress each item separately", IDX_COMPRESS_SEPARATE, MY_CHECKBOX,
             g4x2, yOpt + 62, g4xs2, 10
+  LTEXT     "Serial start:", IDT_COMPRESS_SERIAL_START, g4x2, yOpt + 78, 50, 8
+  EDITTEXT  IDE_COMPRESS_SERIAL_START, g4x2 + 52, yOpt + 76, 40, 14, ES_AUTOHSCROLL
 
 
   GROUPBOX  "Encryption", IDG_COMPRESS_ENCRYPTION, g4x, yPsw, g4xs, GROUP_Y_SIZE_ENCRYPT
