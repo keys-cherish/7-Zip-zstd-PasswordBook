@@ -62,6 +62,7 @@ static const UInt32 kLangIDs[] =
         IDX_COMPRESS_SFX,
         IDX_COMPRESS_SHARED,
         IDX_COMPRESS_DEL,
+        IDX_COMPRESS_SEPARATE,
 
         IDT_COMPRESS_MEMORY,
         IDT_COMPRESS_MEMORY_DE,
