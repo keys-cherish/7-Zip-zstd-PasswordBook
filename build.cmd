@@ -18,11 +18,12 @@ REM Check for clean/rebuild option
 if "%1"=="clean" goto :cleanonly
 if "%1"=="rebuild" goto :clean
 
-REM Always clean FM and GUI cache to ensure fresh build
+REM Always clean FM, GUI, Explorer cache to ensure fresh build
 echo.
-echo Cleaning FM/GUI cache for fresh build...
+echo Cleaning FM/GUI/Explorer cache for fresh build...
 if exist "%ROOT%\UI\FileManager\%PLATFORM%" rd /s /q "%ROOT%\UI\FileManager\%PLATFORM%"
 if exist "%ROOT%\UI\GUI\%PLATFORM%" rd /s /q "%ROOT%\UI\GUI\%PLATFORM%"
+if exist "%ROOT%\UI\Explorer\%PLATFORM%" rd /s /q "%ROOT%\UI\Explorer\%PLATFORM%"
 goto :build
 
 :cleanonly
@@ -31,6 +32,7 @@ echo Cleaning all build cache...
 if exist "%ROOT%\Bundles\Format7zF\%PLATFORM%" rd /s /q "%ROOT%\Bundles\Format7zF\%PLATFORM%"
 if exist "%ROOT%\UI\FileManager\%PLATFORM%" rd /s /q "%ROOT%\UI\FileManager\%PLATFORM%"
 if exist "%ROOT%\UI\GUI\%PLATFORM%" rd /s /q "%ROOT%\UI\GUI\%PLATFORM%"
+if exist "%ROOT%\UI\Explorer\%PLATFORM%" rd /s /q "%ROOT%\UI\Explorer\%PLATFORM%"
 echo   [OK] Build cache cleaned.
 goto :end
 
@@ -40,6 +42,7 @@ echo Cleaning all build cache...
 if exist "%ROOT%\Bundles\Format7zF\%PLATFORM%" rd /s /q "%ROOT%\Bundles\Format7zF\%PLATFORM%"
 if exist "%ROOT%\UI\FileManager\%PLATFORM%" rd /s /q "%ROOT%\UI\FileManager\%PLATFORM%"
 if exist "%ROOT%\UI\GUI\%PLATFORM%" rd /s /q "%ROOT%\UI\GUI\%PLATFORM%"
+if exist "%ROOT%\UI\Explorer\%PLATFORM%" rd /s /q "%ROOT%\UI\Explorer\%PLATFORM%"
 echo   [OK] Build cache cleaned.
 
 :build
@@ -84,6 +87,17 @@ if %errorlevel% neq 0 (
 )
 copy "%PLATFORM%\7zG.exe" "%OUTDIR%\" >nul
 echo   [OK] 7zG.exe
+
+echo.
+echo Building 7-zip.dll (Shell Extension)...
+cd /d "%ROOT%\UI\Explorer"
+nmake /NOLOGO
+if %errorlevel% neq 0 (
+    echo ERROR: Failed to build 7-zip.dll
+    goto :error
+)
+copy "%PLATFORM%\7-zip.dll" "%OUTDIR%\" >nul
+echo   [OK] 7-zip.dll
 
 echo.
 echo ============================================

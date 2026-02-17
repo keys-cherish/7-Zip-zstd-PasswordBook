@@ -44,7 +44,7 @@
 #define GROUP_Y_SIZE 8
 #define GROUP_Y_SIZE_ENCRYPT 8
 #else
-#define GROUP_Y_SIZE 64
+#define GROUP_Y_SIZE 80
 #define GROUP_Y_SIZE_ENCRYPT 128
 #endif
 
@@ -124,6 +124,8 @@ BEGIN
             g4x2, yOpt + 30, g4xs2, 10
   CONTROL   "Delete files after compression", IDX_COMPRESS_DEL, MY_CHECKBOX,
             g4x2, yOpt + 46, g4xs2, 10
+  CONTROL   "Compress each item separately", IDX_COMPRESS_SEPARATE, MY_CHECKBOX,
+            g4x2, yOpt + 62, g4xs2, 10
 
 
   GROUPBOX  "Encryption", IDG_COMPRESS_ENCRYPTION, g4x, yPsw, g4xs, GROUP_Y_SIZE_ENCRYPT

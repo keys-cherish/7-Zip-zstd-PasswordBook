@@ -1027,7 +1027,7 @@ Z7_COMWF_B CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
     CMenu menu;
     menu.Attach(hMenu);
     menuDestroyer.Disable();
-    MyAddSubMenu(_commandMap, kMainVerb, menu, indexMenu++, currentCommandID++, (UString)"7-Zip ZS",
+    MyAddSubMenu(_commandMap, kMainVerb, menu, indexMenu++, currentCommandID++, (UString)"7-Zip ZS PB",
         popupMenu, // popupMenu.Detach(),
         bitmap);
   }
@@ -1073,7 +1073,7 @@ Z7_COMWF_B CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
           menu.Attach(hMenu);
           // menuDestroyer_CRC.Disable();
         }
-        MyAddSubMenu(_commandMap, kCheckSumCascadedVerb, menu, indexInParent++, currentCommandID++, (UString)"7-Zip ZS Hash", subMenu,
+        MyAddSubMenu(_commandMap, kCheckSumCascadedVerb, menu, indexInParent++, currentCommandID++, (UString)"7-Zip ZS PB Hash", subMenu,
           /* insertHashMenuTo7zipMenu ? NULL : */ bitmap);
         _commandMap.Back().CtxCommandType = CtxCommandType_CrcRoot;
         if (!insertHashMenuTo7zipMenu)

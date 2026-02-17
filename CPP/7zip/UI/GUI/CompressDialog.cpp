@@ -548,6 +548,7 @@ bool CCompressDialog::OnInit()
 
   CheckButton(IDX_COMPRESS_SHARED, Info.OpenShareForWrite);
   CheckButton(IDX_COMPRESS_DEL, Info.DeleteAfterCompressing);
+  CheckButton(IDX_COMPRESS_SEPARATE, Info.CompressSeparately);
 
   FormatChanged(false); // isChanged
 
@@ -1174,6 +1175,7 @@ void CCompressDialog::OnOK()
   Info.SFXMode = IsSFX();
   Info.OpenShareForWrite = IsButtonCheckedBool(IDX_COMPRESS_SHARED);
   Info.DeleteAfterCompressing = IsButtonCheckedBool(IDX_COMPRESS_DEL);
+  Info.CompressSeparately = IsButtonCheckedBool(IDX_COMPRESS_SEPARATE);
 
   m_RegistryInfo.EncryptHeaders =
       Info.EncryptHeaders = IsButtonCheckedBool(IDX_COMPRESS_ENCRYPT_FILE_NAMES);

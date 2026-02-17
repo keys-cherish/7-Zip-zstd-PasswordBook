@@ -56,6 +56,7 @@ namespace NCompressDialog
     bool SFXMode;
     bool OpenShareForWrite;
     bool DeleteAfterCompressing;
+    bool CompressSeparately;
     
     CBoolPair SymLinks;
     CBoolPair HardLinks;
@@ -89,6 +90,7 @@ namespace NCompressDialog
         SFXMode(false),
         OpenShareForWrite(false),
         DeleteAfterCompressing(false),
+        CompressSeparately(false),
         FormatIndex(-1)
     {
       Level = Order = (UInt32)(Int32)-1;

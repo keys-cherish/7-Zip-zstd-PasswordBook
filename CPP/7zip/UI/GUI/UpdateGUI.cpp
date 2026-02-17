@@ -316,6 +316,7 @@ static HRESULT ShowDialog(
     CCodecs *codecs,
     const CObjectVector<NWildcard::CCensorPath> &censor,
     CUpdateOptions &options,
+    bool &compressSeparately,
     CUpdateCallbackGUI *callback, HWND hwndParent)
 {
   if (options.Commands.Size() != 1)
@@ -458,6 +459,7 @@ static HRESULT ShowDialog(
     return E_ABORT;
 
   options.DeleteAfterCompressing = di.DeleteAfterCompressing;
+  compressSeparately = di.CompressSeparately;
 
   options.SymLinks = di.SymLinks;
   options.HardLinks = di.HardLinks;
@@ -553,15 +555,80 @@ HRESULT UpdateGUI(
 {
   messageWasDisplayed = false;
   bool needSetPath  = true;
+  bool compressSeparately = false;
   if (showDialog)
   {
-    RINOK(ShowDialog(codecs, censor.CensorPaths, options, callback, hwndParent))
+    RINOK(ShowDialog(codecs, censor.CensorPaths, options, compressSeparately, callback, hwndParent))
     needSetPath = false;
   }
   if (options.SfxMode && options.SfxModule.IsEmpty())
   {
     options.SfxModule = NWindows::NDLL::GetModuleDirPrefix();
     options.SfxModule += kDefaultSfxModule;
+  }
+
+  // "Compress each item separately" mode:
+  // iterate over each censor path and compress individually
+  if (compressSeparately && censor.CensorPaths.Size() > 1)
+  {
+    const CArchivePath savedArchivePath = options.ArchivePath;
+
+    for (unsigned idx = 0; idx < censor.CensorPaths.Size(); idx++)
+    {
+      NWildcard::CCensor singleCensor;
+      singleCensor.CensorPaths.Add(censor.CensorPaths[idx]);
+
+      // Derive archive name from the item's file/folder name
+      const UString &itemPath = censor.CensorPaths[idx].Path;
+      UString itemName;
+      int slashPos = itemPath.ReverseFind_PathSepar();
+      if (slashPos >= 0)
+        itemName = itemPath.Ptr((unsigned)(slashPos + 1));
+      else
+        itemName = itemPath;
+      // Remove trailing separator if any
+      if (itemName.Len() > 0 && IS_PATH_SEPAR(itemName.Back()))
+        itemName.DeleteBack();
+
+      // Set archive path: same directory as original, but with item name
+      UString arcDir;
+      {
+        const UString &origArc = savedArchivePath.GetPathWithoutExt();
+        int dirSlash = origArc.ReverseFind_PathSepar();
+        if (dirSlash >= 0)
+          arcDir = origArc.Left((unsigned)(dirSlash + 1));
+      }
+      options.ArchivePath = savedArchivePath;
+      options.ArchivePath.ParseFromPath(arcDir + itemName, k_ArcNameMode_Smart);
+
+      CThreadUpdating tu;
+      tu.needSetPath = needSetPath;
+      tu.codecs = codecs;
+      tu.formatIndices = &formatIndices;
+      tu.cmdArcPath = &cmdArcPath;
+      tu.UpdateCallbackGUI = callback;
+      tu.UpdateCallbackGUI->ProgressDialog = &tu;
+      tu.UpdateCallbackGUI->Init();
+
+      UString title = LangString(IDS_PROGRESS_COMPRESSING);
+      title += L" (";
+      title += itemName;
+      title += L")";
+
+      tu.WildcardCensor = &singleCensor;
+      tu.Options = &options;
+      tu.IconID = IDI_ICON;
+
+      RINOK(tu.Create(title, hwndParent))
+
+      if (tu.Result != S_OK)
+      {
+        messageWasDisplayed = tu.ThreadFinishedOK && tu.MessagesDisplayed;
+        return tu.Result;
+      }
+    }
+    messageWasDisplayed = true;
+    return S_OK;
   }
 
   CThreadUpdating tu;

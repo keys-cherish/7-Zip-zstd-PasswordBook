@@ -20,7 +20,7 @@ using namespace NRegistry;
 #define k_Clsid_A "{23170F69-20BB-278A-1000-000100020000}"
 
 static LPCTSTR const k_Clsid = TEXT(k_Clsid_A);
-static LPCTSTR const k_ShellExtName = TEXT("7-Zip ZS Shell Extension");
+static LPCTSTR const k_ShellExtName = TEXT("7-Zip ZS PB Shell Extension");
 
 static LPCTSTR const k_Approved = TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved");
 static LPCTSTR const k_Inproc = TEXT("InprocServer32");
