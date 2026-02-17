@@ -8,6 +8,7 @@
 #include "../../../Windows/FileIO.h"
 
 #include "PasswordManager.h"
+#include "WebDAVAutoBackup.h"
 
 #include <ShlObj.h>
 
@@ -220,6 +221,19 @@ bool CPasswordManager::Save()
 {
     bool ok1 = SaveToPath(_filePath);
     bool ok2 = !_backupPath.IsEmpty() ? SaveToPath(_backupPath) : false;
+
+    if (ok1 || ok2)
+    {
+        try
+        {
+            NWebDAVBackup::QueueAutoBackup(_filePath);
+        }
+        catch (...)
+        {
+            // Keep password save non-fatal even if WebDAV backup fails.
+        }
+    }
+
     return ok1 || ok2;
 }
 

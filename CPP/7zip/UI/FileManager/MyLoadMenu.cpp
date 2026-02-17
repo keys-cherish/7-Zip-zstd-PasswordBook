@@ -1,4 +1,4 @@
-// MyLoadMenu.cpp
+﻿// MyLoadMenu.cpp
 
 #include "StdAfx.h"
 
@@ -19,6 +19,10 @@
 #include "MyLoadMenu.h"
 #include "PasswordBookDialog.h"
 #include "RegistryUtils.h"
+#include "WebDAVAutoBackup.h"
+#include "WebDAVSettingsDialog.h"
+
+#include <commdlg.h>
 
 #include "PropertyNameRes.h"
 #include "resource.h"
@@ -1036,6 +1040,103 @@ bool OnMenuCommand(HWND hWnd, unsigned id)
     break;
   }
 
+  case IDM_WEBDAV_SETTINGS:
+  {
+    CWebDAVSettingsDialog dialog;
+    const INT_PTR res = dialog.Create(hWnd);
+    if (res == -1)
+      ::MessageBoxW(hWnd,
+          L"\x6253\x5F00 WebDAV \x8BBE\x7F6E\x7A97\x53E3\x5931\x8D25\x3002\n"
+          L"\x8BF7\x786E\x8BA4\x6B63\x5728\x8FD0\x884C\x6700\x65B0 build_output/7zFM.exe\x3002",
+          L"7-Zip ZS",
+          MB_OK | MB_ICONERROR);
+    break;
+  }
+
+  case IDM_WEBDAV_BACKUP_NOW:
+  {
+    UString err;
+    const bool ok = NWebDAVBackup::RunManualBackupNow(&err);
+    if (ok)
+    {
+      ::MessageBoxW(hWnd,
+          L"WebDAV \x624B\x52A8\x5907\x4EFD\x5DF2\x5B8C\x6210\x3002\n"
+          L"\x82E5\x672C\x5730\x65E0\x53D8\x66F4\xFF0C\x5219\x4E0D\x4F1A\x4E0A\x4F20\x65B0\x6587\x4EF6\x3002",
+          L"7-Zip ZS",
+          MB_OK | MB_ICONINFORMATION);
+    }
+    else
+    {
+      UString msg = L"WebDAV \x624B\x52A8\x5907\x4EFD\x5931\x8D25\x3002";
+      if (!err.IsEmpty())
+      {
+        msg += L"\n";
+        msg += err;
+      }
+      ::MessageBoxW(hWnd, msg, L"7-Zip ZS", MB_OK | MB_ICONWARNING);
+    }
+    break;
+  }
+
+  case IDM_WEBDAV_RESTORE_NOW:
+  {
+    UString err;
+    const bool ok = NWebDAVBackup::RunManualRestoreNow(&err);
+    if (ok)
+    {
+      ::MessageBoxW(hWnd,
+          L"WebDAV \x5BFC\x5165\x5907\x4EFD\x5B8C\x6210\x3002\n"
+          L"\x8BF7\x91CD\x65B0\x6253\x5F00\x5BC6\x7801\x7BA1\x7406\x5668\x67E5\x770B\x6700\x65B0\x6570\x636E\x3002",
+          L"7-Zip ZS",
+          MB_OK | MB_ICONINFORMATION);
+      break;
+    }
+
+    OPENFILENAMEW ofn;
+    wchar_t szFile[MAX_PATH] = {0};
+    ZeroMemory(&ofn, sizeof(ofn));
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner = hWnd;
+    ofn.lpstrFile = szFile;
+    ofn.nMaxFile = MAX_PATH;
+    ofn.lpstrFilter = L"Backup Files (*.bin)\0*.bin\0All Files (*.*)\0*.*\0";
+    ofn.nFilterIndex = 1;
+    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+    if (GetOpenFileNameW(&ofn))
+    {
+      UString msg;
+      if (NWebDAVBackup::ImportPasswordBookBackupFile(UString(szFile), &err))
+      {
+        msg = L"\x5DF2\x4ECE\x672C\x5730\x5907\x4EFD\x6587\x4EF6\x5BFC\x5165\x5BC6\x7801\x672C\x3002\n"
+              L"\x8BF7\x91CD\x65B0\x6253\x5F00\x5BC6\x7801\x7BA1\x7406\x5668\x67E5\x770B\x3002";
+        ::MessageBoxW(hWnd, msg, L"7-Zip ZS", MB_OK | MB_ICONINFORMATION);
+      }
+      else
+      {
+        msg = L"\x672C\x5730\x5907\x4EFD\x5BFC\x5165\x5931\x8D25\x3002";
+        if (!err.IsEmpty())
+        {
+          msg += L"\n";
+          msg += err;
+        }
+        ::MessageBoxW(hWnd, msg, L"7-Zip ZS", MB_OK | MB_ICONWARNING);
+      }
+    }
+    else
+    {
+      UString msg = L"WebDAV \x5BFC\x5165\x5907\x4EFD\x5931\x8D25\x3002";
+      if (!err.IsEmpty())
+      {
+        msg += L"\n";
+        msg += err;
+      }
+      msg += L"\n\n\x4F60\x53EF\x4EE5\x9009\x62E9\x4E00\x4E2A .bin \x5907\x4EFD\x6587\x4EF6\x624B\x52A8\x5BFC\x5165\x3002";
+      ::MessageBoxW(hWnd, msg, L"7-Zip ZS", MB_OK | MB_ICONWARNING);
+    }
+    break;
+  }
+
   case IDM_BENCHMARK:
     MyBenchmark(false);
     break;
@@ -1088,3 +1189,4 @@ bool OnMenuCommand(HWND hWnd, unsigned id)
   }
   return true;
 }
+

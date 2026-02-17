@@ -34,6 +34,46 @@ Passwords are stored in `data\password_book.dat` in the 7-Zip installation direc
 - **Encrypted**: Password data is encrypted for security
 - **Backup**: Auto-saved to `%APPDATA%\7-Zip-ZS-PB\` as secondary backup
 
+#### WebDAV Auto Backup (Settings + Password Book)
+
+This fork supports automatic WebDAV backup when password book changes.
+
+- Compatible with common WebDAV providers (including Jianguoyun and 123Pan WebDAV)
+- Backup root folder on server: `7z_ZS_PB`
+- Date-based folders: `7z_ZS_PB/YYYYMMDD/`
+- Incremental behavior for password book (only uploads when content hash changes)
+- Settings snapshot + password book packed together per backup point
+- Optional backup-file encryption via `EncryptPassword`
+- If `EncryptPassword` is empty, backup flow prompts a password dialog and saves it to config
+
+WebDAV config file: `%APPDATA%\7-Zip-zstd\webdav.ini`
+
+Example:
+
+```ini
+[Server]
+URL=https://dav.jianguoyun.com
+Username=your_user
+Password=<DPAPI_BASE64_OR_PLAIN>
+BasePath=/dav/
+Timeout=30
+
+[Backup]
+EncryptPassword=<DPAPI_BASE64_OR_PLAIN>
+KeepVersions=10
+
+[AutoBackup]
+Enabled=1
+DelaySeconds=30
+```
+
+Notes:
+
+- `Password` and `EncryptPassword` support existing DPAPI+Base64 values.
+- If plain text is used, it is also accepted for compatibility.
+- 123Pan requires WebDAV to be enabled in your 123Pan account first.
+- For Jianguoyun, use an app password and a `/dav/...` style base path.
+
 ### Based On
 
 This project is based on:

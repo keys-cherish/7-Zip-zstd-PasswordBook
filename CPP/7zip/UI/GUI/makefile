@@ -119,7 +119,9 @@ FM_OBJS = \
   $O\MemDialog.obj \
   $O\OpenCallback.obj \
   $O\PasswordBookDialog.obj \
+  $O\WebDAVSettingsDialog.obj \
   $O\PasswordManager.obj \
+  $O\WebDAVAutoBackup.obj \
   $O\ProgramLocation.obj \
   $O\PropertyName.obj \
   $O\RegistryUtils.obj \

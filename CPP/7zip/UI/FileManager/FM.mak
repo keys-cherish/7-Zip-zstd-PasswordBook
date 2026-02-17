@@ -47,7 +47,9 @@ FM_OBJS = \
   $O\PanelSort.obj \
   $O\PanelSplitFile.obj \
   $O\PasswordBookDialog.obj \
+  $O\WebDAVSettingsDialog.obj \
   $O\PasswordManager.obj \
+  $O\WebDAVAutoBackup.obj \
   $O\ProgramLocation.obj \
   $O\PropertyName.obj \
   $O\RegistryAssociations.obj \
