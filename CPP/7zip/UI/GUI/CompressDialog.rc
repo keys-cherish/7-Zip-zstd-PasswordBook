@@ -124,9 +124,9 @@ BEGIN
             g4x2, yOpt + 30, g4xs2, 10
   CONTROL   "Delete files after compression", IDX_COMPRESS_DEL, MY_CHECKBOX,
             g4x2, yOpt + 46, g4xs2, 10
-  CONTROL   "Compress each item separately", IDX_COMPRESS_SEPARATE, MY_CHECKBOX,
+  CONTROL   L"\x5355\x72EC\x538B\x7F29\x6BCF\x4E2A\x6761\x76EE", IDX_COMPRESS_SEPARATE, MY_CHECKBOX,
             g4x2, yOpt + 62, g4xs2, 10
-  LTEXT     "Serial start:", IDT_COMPRESS_SERIAL_START, g4x2, yOpt + 78, 50, 8
+  LTEXT     L"\x5E8F\x53F7\x8D77\x59CB:", IDT_COMPRESS_SERIAL_START, g4x2, yOpt + 78, 50, 8
   EDITTEXT  IDE_COMPRESS_SERIAL_START, g4x2 + 52, yOpt + 76, 40, 14, ES_AUTOHSCROLL
 
 

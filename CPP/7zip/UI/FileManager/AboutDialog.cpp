@@ -48,7 +48,7 @@ bool CAboutDialog::OnInit()
   #endif
   SetItemText(IDT_ABOUT_VERSION, UString("7-Zip " MY_VERSION_CPU));
   SetItemText(IDT_ABOUT_DATE, LLL(MY_DATE));
-  
+
   NormalizePosition();
   return CModalDialog::OnInit();
 }
@@ -60,20 +60,20 @@ void CAboutDialog::OnHelp()
 
 bool CAboutDialog::OnButtonClicked(unsigned buttonID, HWND buttonHWND)
 {
-  LPCTSTR url;
   switch (buttonID)
   {
-    case IDB_ABOUT_HOMEPAGE: url = kHomePageURL; break;
-    case IDB_ABOUT_HOMEPAGE2: url = kHomePageURL2; break;
+    case IDB_ABOUT_HOMEPAGE:
+    case IDB_ABOUT_HOMEPAGE2:
+    {
+      LPCTSTR url = (buttonID == IDB_ABOUT_HOMEPAGE) ? kHomePageURL : kHomePageURL2;
+      SHELLEXECUTEINFO s;
+      memset(&s, 0, sizeof(s));
+      s.cbSize = sizeof(s);
+      s.lpFile = url;
+      ::ShellExecuteEx(&s);
+      return true;
+    }
     default:
       return CModalDialog::OnButtonClicked(buttonID, buttonHWND);
   }
-
-  SHELLEXECUTEINFO s;
-  memset(&s, 0, sizeof(s));
-  s.cbSize = sizeof(s);
-  s.lpFile = url;
-  ::ShellExecuteEx(&s);
-
-  return true;
 }

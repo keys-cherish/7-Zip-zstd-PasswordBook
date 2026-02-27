@@ -14,6 +14,7 @@
 #include "AboutDialog.h"
 #include "App.h"
 #include "BrowseDialog2.h"
+#include "ComboDialog.h"
 #include "HelpUtils.h"
 #include "LangUtils.h"
 #include "MyLoadMenu.h"
@@ -23,6 +24,11 @@
 #include "WebDAVSettingsDialog.h"
 
 #include <commdlg.h>
+#include <shlobj.h>
+
+#include "../../../Common/IntToString.h"
+#include "../../../Common/StringConvert.h"
+#include "../../../Common/UTFConvert.h"
 
 #include "PropertyNameRes.h"
 #include "resource.h"

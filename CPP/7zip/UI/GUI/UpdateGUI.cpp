@@ -5,6 +5,7 @@
 #include "../../../Common/IntToString.h"
 #include "../../../Common/StringConvert.h"
 #include "../../../Common/StringToInt.h"
+#include "../../../Common/UTFConvert.h"
 
 #include "../../../Windows/DLL.h"
 #include "../../../Windows/FileDir.h"
@@ -755,19 +756,54 @@ HRESULT UpdateGUI(
   }
 
   // "Compress each item separately" mode:
-  // iterate over each censor path and compress individually
-  if (compressSeparately && censor.CensorPaths.Size() > 1)
+  // Try CensorPaths first (CompressCall2/FileManager path: CensorPaths has data, Pairs empty)
+  // Fallback to Pairs (command-line GUI.cpp path: CensorPaths consumed by Parse2, Pairs has data)
+  UStringVector separateItems;
+  if (compressSeparately)
+  {
+    FOR_VECTOR (ci, censor.CensorPaths)
+    {
+      if (censor.CensorPaths[ci].Include)
+        separateItems.Add(censor.CensorPaths[ci].Path);
+    }
+    if (separateItems.IsEmpty())
+    {
+      FOR_VECTOR (pi, censor.Pairs)
+      {
+        const NWildcard::CPair &pair = censor.Pairs[pi];
+        FOR_VECTOR (ii, pair.Head.IncludeItems)
+        {
+          const NWildcard::CItem &item = pair.Head.IncludeItems[ii];
+          UString path = pair.Prefix;
+          FOR_VECTOR (pp, item.PathParts)
+          {
+            if (pp > 0)
+              path.Add_PathSepar();
+            path += item.PathParts[pp];
+          }
+          separateItems.Add(path);
+        }
+      }
+    }
+  }
+
+  if (compressSeparately && separateItems.Size() >= 1)
   {
     const CArchivePath savedArchivePath = options.ArchivePath;
     const ESerialType serialType = DetectSerialType(serialStart);
 
-    for (unsigned idx = 0; idx < censor.CensorPaths.Size(); idx++)
+    for (unsigned idx = 0; idx < separateItems.Size(); idx++)
     {
-      NWildcard::CCensor singleCensor;
-      singleCensor.CensorPaths.Add(censor.CensorPaths[idx]);
+      const UString &itemPath = separateItems[idx];
 
-      // Derive archive name from the item's file/folder name
-      const UString &itemPath = censor.CensorPaths[idx].Path;
+      NWildcard::CCensor singleCensor;
+      {
+        NWildcard::CCensorPath cp;
+        cp.Path = itemPath;
+        cp.Include = true;
+        singleCensor.CensorPaths.Add(cp);
+        singleCensor.AddPathsToCensor(NWildcard::k_AbsPath);
+      }
       UString itemName;
       int slashPos = itemPath.ReverseFind_PathSepar();
       if (slashPos >= 0)
@@ -784,20 +820,13 @@ HRESULT UpdateGUI(
       {
         UString serial = GenerateSerial(serialStart, serialType, idx);
         arcName = serial;
-        arcName += L"_";
+        arcName += L"-";
         arcName += itemName;
       }
 
-      // Set archive path: same directory as original, but with item name
-      UString arcDir;
-      {
-        const UString &origArc = savedArchivePath.GetPathWithoutExt();
-        int dirSlash = origArc.ReverseFind_PathSepar();
-        if (dirSlash >= 0)
-          arcDir = origArc.Left((unsigned)(dirSlash + 1));
-      }
+      // Set archive path: same directory as original, with new name + original extension
       options.ArchivePath = savedArchivePath;
-      options.ArchivePath.ParseFromPath(arcDir + arcName, k_ArcNameMode_Smart);
+      options.ArchivePath.Name = arcName;
 
       CThreadUpdating tu;
       tu.needSetPath = needSetPath;

@@ -50,3 +50,11 @@ Thumbs.db
 
 # Portable batch (not needed for source)
 make_portable.bat
+
+# Private files (not for public repo)
+CLAUDE.md
+.claude/
+suggest.md
+nul
+build.cmd
+build_last.log
